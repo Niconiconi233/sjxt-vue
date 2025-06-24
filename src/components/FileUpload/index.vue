@@ -51,6 +51,15 @@ const props = defineProps({
     type: String,
     default: "/common/upload"
   },
+  minioAction: {
+    type: String,
+    default: "/common/uploadMinio"
+  },
+  // 上传类型，用于控制上传路径
+  uploadType: {
+    type: String,
+    default: "default"
+  },
   // 上传携带的参数
   data: {
     type: Object
@@ -92,7 +101,16 @@ const emit = defineEmits()
 const number = ref(0)
 const uploadList = ref([])
 const baseUrl = import.meta.env.VITE_APP_BASE_API
-const uploadFileUrl = ref(import.meta.env.VITE_APP_BASE_API + props.action) // 上传文件服务器地址
+const uploadFileUrl = computed(() => {
+  const basePath = import.meta.env.VITE_APP_BASE_API
+  console.log(props.uploadType)
+  switch (props.uploadType) {
+    case 'minio':
+      return basePath + props.minioAction
+    default:
+      return basePath + props.action
+  }
+})
 const headers = ref({ Authorization: "Bearer " + getToken() })
 const fileList = ref([])
 const showTip = computed(

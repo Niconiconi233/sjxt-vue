@@ -83,6 +83,12 @@ export const constantRoutes = [
         meta: { title: '个人中心', icon: 'user' }
       }
     ]
+  },
+  {
+    path: '/regulations/search',
+    component: () => import('@/views/regulation/search.vue'),
+    name: 'RegulationsdeSearch',
+    meta: { title: '制度搜索', icon: 'search', affix: false }
   }
 ]
 
