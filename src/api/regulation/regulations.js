@@ -51,3 +51,11 @@ export function parseRegulations(data) {
     data: data
   })
 }
+
+export function searchRegulations(type, keyword) {
+  return request({
+    url: '/regulation/search/search',
+    method: 'get',
+    params: { type, key_word: keyword }
+  })
+}

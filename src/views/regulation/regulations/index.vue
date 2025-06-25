@@ -99,7 +99,7 @@
             :type="scope.row.regulationStatus === 1 ? 'success' : 'danger'"
             effect="light"
           >
-            {{ scope.row.regulationStatus === 1 ? '是' : '否' }}
+            {{ scope.row.regulationStatus === 1 ? '在用' : '废止' }}
           </el-tag>
         </template>
       </el-table-column>
