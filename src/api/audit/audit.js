@@ -42,3 +42,10 @@ export function delAudit(id) {
     method: 'delete'
   })
 }
+
+export function getDeptList(deptId) {
+  return request({
+    url: '/system/dept/list/sub_dept/' + deptId,
+    method: 'get',
+  })  
+}

@@ -70,30 +70,27 @@
 
     <el-table v-loading="loading" :data="auditList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="项目ID" align="center" prop="id" />
       <el-table-column label="项目名称" align="center" prop="projectName" />
-      <el-table-column label="录入人" align="center" prop="inputBy" />
-      <el-table-column label="录入时间" align="center" prop="inputDate" width="180">
-        <template #default="scope">
-          <span>{{ parseTime(scope.row.inputDate, '{y}-{m}-{d}') }}</span>
-        </template>
-      </el-table-column>
       <el-table-column label="整改时限" align="center" prop="rectificationDeadline" width="180">
         <template #default="scope">
           <span>{{ parseTime(scope.row.rectificationDeadline, '{y}-{m}-{d}') }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="创建时间" align="center" prop="createdAt" width="180">
-        <template #default="scope">
-          <span>{{ parseTime(scope.row.createdAt, '{y}-{m}-{d}') }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column label="修改时间" align="center" prop="updatedAt" width="180">
-        <template #default="scope">
-          <span>{{ parseTime(scope.row.updatedAt, '{y}-{m}-{d}') }}</span>
-        </template>
-      </el-table-column>
       <el-table-column label="整改机构" align="center" prop="rectificationOrgName" />
+      <el-table-column label="问题个数" align="center" prop="issueCount" />
+      <el-table-column label="问题笔数" align="center" prop="issueNum" />
+      <el-table-column label="问题金额" align="center">
+        <template #default="scope">
+          <span>{{ Number(scope.row.issueAmount).toFixed(2) }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="整改问题个数" align="center" prop="rectifiedIssueCount" />
+      <el-table-column label="整改问题笔数" align="center" prop="rectifiedIssueNum" />
+      <el-table-column label="整改问题金额" align="center">
+        <template #default="scope">
+          <span>{{ Number(scope.row.rectifiedIssueAmount).toFixed(2) }}</span>
+        </template>
+      </el-table-column>
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template #default="scope">
           <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['audit:audit:edit']">修改</el-button>
@@ -125,10 +122,13 @@
           </el-date-picker>
         </el-form-item>
         <el-form-item label="整改机构" prop="rectificationOrgName">
-          <el-select v-model="form.rectificationOrgName" placeholder="请选择整改机构">
-            <el-option label="A公司" value="A公司" />
-            <el-option label="B公司" value="B公司" />
-            <el-option label="C公司" value="C公司" />
+          <el-select v-model="form.rectificationOrgName" placeholder="请选择整改机构" @change="handleOrgChange">
+            <el-option 
+              v-for="dept in deptList" 
+              :key="dept.deptId" 
+              :label="dept.deptName" 
+              :value="dept.deptName" 
+            />
           </el-select>
         </el-form-item>
       </el-form>
@@ -143,12 +143,15 @@
 </template>
 
 <script setup name="Audit">
-import { listAudit, getAudit, delAudit, addAudit, updateAudit } from "@/api/audit/audit"
+import { listAudit, getAudit, delAudit, addAudit, updateAudit, getDeptList } from "@/api/audit/audit"
+import useUserStore from '@/store/modules/user'
 
 const { proxy } = getCurrentInstance()
+const userStore = useUserStore()
 
 const auditList = ref([])
 const auditIssueList = ref([])
+const deptList = ref([])
 const open = ref(false)
 const loading = ref(true)
 const showSearch = ref(true)
@@ -183,6 +186,21 @@ const data = reactive({
 
 const { queryParams, form, rules } = toRefs(data)
 
+/** 获取部门列表 */
+function getDeptListData() {
+  getDeptList(100).then(response => {
+    deptList.value = response.data
+  })
+}
+
+/** 机构选择变化处理 */
+function handleOrgChange(value) {
+  const selectedDept = deptList.value.find(dept => dept.deptName === value)
+  if (selectedDept) {
+    form.value.rectificationOrgId = selectedDept.deptId
+  }
+}
+
 /** 查询审计问题管理列表 */
 function getList() {
   loading.value = true
@@ -213,7 +231,13 @@ function reset() {
     updatedAt: null,
     isDeleted: null,
     rectificationOrgId: null,
-    rectificationOrgName: null
+    rectificationOrgName: null,
+    issueCount: 0,
+    issueNum: 0,
+    issueAmount: 0.0,
+    rectifiedIssueCount: 0,
+    rectifiedIssueNum: 0,
+    rectifiedIssueAmount: 0.0
   }
   auditIssueList.value = []
   proxy.resetForm("auditRef")
@@ -241,6 +265,7 @@ function handleSelectionChange(selection) {
 /** 新增按钮操作 */
 function handleAdd() {
   reset()
+  form.value.inputBy = userStore.name
   open.value = true
   title.value = "添加审计项目"
 }
@@ -332,6 +357,11 @@ function handleExport() {
     ...queryParams.value
   }, `audit_${new Date().getTime()}.xlsx`)
 }
+
+// 组件挂载时获取部门列表
+onMounted(() => {
+  getDeptListData()
+})
 
 getList()
 </script>
