@@ -95,6 +95,7 @@
         <template #default="scope">
           <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['audit:audit:edit']">修改</el-button>
           <el-button link type="primary" icon="Delete" @click="handleDelete(scope.row)" v-hasPermi="['audit:audit:remove']">删除</el-button>
+          <el-button link type="success" icon="Plus" @click="handleImportDialogOpen" v-hasPermi="['audit:audit:add']">添加</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -139,12 +140,43 @@
         </div>
       </template>
     </el-dialog>
+
+    <!-- 新增：导入问题明细弹窗 -->
+    <el-dialog title="批量导入问题明细" v-model="importDialogOpen" width="400px" append-to-body>
+      <div style="margin-bottom: 16px; color: #666; font-size: 14px;">
+        您可以下载模板，填写问题明细后通过EXCEL文件批量导入。
+      </div>
+      <div style="margin-bottom: 8px; display: flex; gap: 8px;">
+        <el-button type="primary" icon="Download" @click="downloadTemplate">下载模板</el-button>
+        <FileUpload
+          :action="'/audit/audit/import'"
+          :fileType="['xls','xlsx']"
+          :limit="1"
+          :fileSize="10"
+          :isShowTip="false"
+          @update:modelValue="handleImportFileChange"
+        >
+          <template #trigger>
+            <el-button type="primary" icon="Upload">选取文件</el-button>
+          </template>
+        </FileUpload>
+      </div>
+      <div style="margin-bottom: 16px; color: #909399; font-size: 13px;">
+        请上传 <b style='color: #f56c6c'>大小不超过 10MB</b> 格式为 <b style='color: #f56c6c'>xls/xlsx</b> 的文件
+      </div>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="importDialogOpen = false">关闭</el-button>
+        </div>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup name="Audit">
 import { listAudit, getAudit, delAudit, addAudit, updateAudit, getDeptList } from "@/api/audit/audit"
 import useUserStore from '@/store/modules/user'
+import FileUpload from '@/components/FileUpload/index.vue'
 
 const { proxy } = getCurrentInstance()
 const userStore = useUserStore()
@@ -161,6 +193,7 @@ const single = ref(true)
 const multiple = ref(true)
 const total = ref(0)
 const title = ref("")
+const importDialogOpen = ref(false)
 
 const data = reactive({
   form: {},
@@ -356,6 +389,20 @@ function handleExport() {
   proxy.download('audit/audit/export', {
     ...queryParams.value
   }, `audit_${new Date().getTime()}.xlsx`)
+}
+
+function handleImportDialogOpen() {
+  importDialogOpen.value = true
+}
+
+function downloadTemplate() {
+  proxy.download('/audit/audit/template', {}, '问题明细导入模板.xlsx')
+}
+
+function handleImportFileChange(val) {
+  // 上传成功后可在此处理返回内容
+  proxy.$modal.msgSuccess('上传成功')
+  importDialogOpen.value = false
 }
 
 // 组件挂载时获取部门列表
