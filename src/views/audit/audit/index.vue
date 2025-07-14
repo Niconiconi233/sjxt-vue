@@ -95,7 +95,7 @@
         <template #default="scope">
           <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['audit:audit:edit']">修改</el-button>
           <el-button link type="primary" icon="Delete" @click="handleDelete(scope.row)" v-hasPermi="['audit:audit:remove']">删除</el-button>
-          <el-button link type="success" icon="Plus" @click="handleImportDialogOpen" v-hasPermi="['audit:audit:add']">添加</el-button>
+          <el-button link type="success" icon="Plus" @click="handleImportDialogOpen(scope.row.id)" v-hasPermi="['audit:audit:add']">添加</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -154,6 +154,7 @@
           :limit="1"
           :fileSize="10"
           :isShowTip="false"
+          :data="{ id: currentImportId }"
           @update:modelValue="handleImportFileChange"
         >
           <template #trigger>
@@ -194,6 +195,7 @@ const multiple = ref(true)
 const total = ref(0)
 const title = ref("")
 const importDialogOpen = ref(false)
+const currentImportId = ref(null)
 
 const data = reactive({
   form: {},
@@ -391,12 +393,13 @@ function handleExport() {
   }, `audit_${new Date().getTime()}.xlsx`)
 }
 
-function handleImportDialogOpen() {
+function handleImportDialogOpen(id) {
+  currentImportId.value = id
   importDialogOpen.value = true
 }
 
 function downloadTemplate() {
-  proxy.download('/audit/audit/template', {}, '问题明细导入模板.xlsx')
+  window.open('http://localhost:9000/rulebucket/template/%E5%AF%BC%E5%85%A5%E6%A8%A1%E6%9D%BF.xlsx', '_blank')
 }
 
 function handleImportFileChange(val) {
@@ -404,6 +407,7 @@ function handleImportFileChange(val) {
   proxy.$modal.msgSuccess('上传成功')
   importDialogOpen.value = false
 }
+
 
 // 组件挂载时获取部门列表
 onMounted(() => {
