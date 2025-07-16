@@ -89,7 +89,7 @@ export const constantRoutes = [
     component: () => import('@/views/regulation/search.vue'),
     name: 'RegulationsdeSearch',
     meta: { title: '制度搜索', icon: 'search', affix: false }
-  }
+  },
 ]
 
 // 动态路由，基于用户权限动态去加载
@@ -161,6 +161,20 @@ export const dynamicRoutes = [
         component: () => import('@/views/tool/gen/editTable'),
         name: 'GenEdit',
         meta: { title: '修改生成配置', activeMenu: '/tool/gen' }
+      }
+    ]
+  },
+  {
+    path: '/audit/issue',
+    component: Layout,
+    hidden: true,
+    permissions: ['audit:audit:list'],
+    children: [
+      {
+        path: 'index/:id(\\d+)',
+        component: () => import('@/views/audit/audit/issue.vue'),
+        name: 'AuditIssue',
+        meta: { title: '审计问题明细', noCache: true, activeMenu: '/audit/audit' }
       }
     ]
   }

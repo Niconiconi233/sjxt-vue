@@ -70,7 +70,13 @@
 
     <el-table v-loading="loading" :data="auditList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="项目名称" align="center" prop="projectName" />
+      <el-table-column label="项目名称" align="center" prop="projectName" show-overflow-tooltip="true">
+        <template #default="scope">
+          <router-link :to="`/audit/issue/index/` + scope.row.id" class="link-type">
+            <span>{{ scope.row.projectName }}</span>
+          </router-link>
+        </template>
+      </el-table-column>
       <el-table-column label="整改时限" align="center" prop="rectificationDeadline" width="180">
         <template #default="scope">
           <span>{{ parseTime(scope.row.rectificationDeadline, '{y}-{m}-{d}') }}</span>
