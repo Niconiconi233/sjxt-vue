@@ -72,7 +72,7 @@
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="项目名称" align="center" prop="projectName" show-overflow-tooltip="true">
         <template #default="scope">
-          <router-link :to="`/audit/issue/index/` + scope.row.id" class="link-type">
+          <router-link :to="{ path: `/audit/issue/index/${scope.row.id}`, query: { projectName: scope.row.projectName } }" class="link-type">
             <span>{{ scope.row.projectName }}</span>
           </router-link>
         </template>

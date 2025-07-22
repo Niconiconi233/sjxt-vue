@@ -49,3 +49,15 @@ export function getDeptList(deptId) {
     method: 'get',
   })  
 }
+
+// 上传整改资料（支持多文件）
+export function uploadAuditMaterials(formData) {
+  return request({
+    url: '/common/uploadMinios',
+    method: 'post',
+    data: formData,
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  })
+}
