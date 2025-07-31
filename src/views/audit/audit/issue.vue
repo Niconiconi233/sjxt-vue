@@ -1,7 +1,7 @@
 <template>
   <div class="audit-issue-detail">
     <h2>{{projectName}}</h2>
-    <el-table :data="issueList" style="width: 100%; margin-top: 20px;">
+    <el-table :data="issueList" style="width: 100%; margin-top: 20px;" v-loading="loading">
       <el-table-column prop="issueType" label="问题定性" align="center" />
       <el-table-column prop="issueDescription" label="问题及描述" align="center">
         <template #default="scope">
@@ -71,6 +71,15 @@
       </el-table-column>
     </el-table>
 
+    <!-- 分页组件 -->
+    <pagination
+      v-show="total > 0"
+      :total="total"
+      v-model:page="queryParams.pageNum"
+      v-model:limit="queryParams.pageSize"
+      @pagination="fetchIssueList"
+    />
+
     <!-- 编辑对话框 -->
     <el-dialog title="编辑问题明细" v-model="editDialogVisible" width="600px">
       <el-form :model="editForm" label-width="120px">
@@ -121,10 +130,10 @@
 </template>
 
 <script setup>
-import { ref, reactive, getCurrentInstance, nextTick } from 'vue'
+import { ref, reactive, getCurrentInstance, nextTick, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import useUserStore from '@/store/modules/user'
-import { uploadAuditMaterials } from '@/api/audit/audit'
+import { uploadAuditMaterials, getIssueList, updateIssue } from '@/api/audit/audit'
 const route = useRoute()
 const id = route.params.id
 const projectName = route.query.projectName
@@ -138,40 +147,43 @@ const uploadHeaders = {
   // Authorization: 'Bearer ' + userStore.token
 }
 
-// 模拟数据，supportMaterials为数组
-const issueList = ref([
-  {
-    issueType: '财务问题',
-    issueDescription: '账目不清，缺少凭证',
-    issueStatus: '未整改',
-    rectificationMeasure: '补充凭证',
-    rectificationResult: '待整改',
-    issueCount: 2,
-    issueNum: 2,
-    issueAmount: 10000.00,
-    rectifiedIssueCount: 0,
-    rectifiedIssueNum: 0,
-    rectifiedIssueAmount: 0.00,
-    supportMaterials: []
-  },
-  {
-    issueType: '合规问题',
-    issueDescription: '合同未备案，内容较长内容较长内容较长内容较长内容较长内容较长内容较长内容较长内容较长内容较长内容较长内容较长内容较长内容较长内容较长内容较长',
-    issueStatus: '已整改',
-    rectificationMeasure: '补办备案，内容较长内容较长内容较长内容较长内容较长内容较长内容较长内容较长内容较长',
-    rectificationResult: '已完成',
-    issueCount: 1,
-    issueNum: 1,
-    issueAmount: 5000.00,
-    rectifiedIssueCount: 1,
-    rectifiedIssueNum: 1,
-    rectifiedIssueAmount: 5000.00,
-    supportMaterials: [
-      { name: '备案文件.pdf', url: 'http://example.com/备案文件.pdf' },
-      { name: '补充材料.docx', url: 'http://example.com/补充材料.docx' }
-    ]
+// 从API获取数据
+const issueList = ref([])
+const loading = ref(false)
+const total = ref(0)
+
+// 查询参数
+const queryParams = ref({
+  pageNum: 1,
+  pageSize: 10,
+  mainId: id
+})
+
+// 获取问题列表数据
+async function fetchIssueList() {
+  loading.value = true
+  try {
+    const response = await getIssueList(queryParams.value.mainId)
+    if (response.code === 200) {
+      issueList.value = response.rows || []
+      total.value = response.total || 0
+    } else {
+      proxy.$modal.msgError(response.msg || '获取问题列表失败')
+    }
+  } catch (error) {
+    console.error('获取问题列表失败:', error)
+    proxy.$modal.msgError('获取问题列表失败')
+  } finally {
+    loading.value = false
   }
-])
+}
+
+// 组件挂载时获取数据
+onMounted(() => {
+  if (id) {
+    fetchIssueList()
+  }
+})
 
 const editDialogVisible = ref(false)
 const editForm = reactive({})
@@ -183,10 +195,21 @@ function handleEdit(row, index) {
   editDialogVisible.value = true
 }
 
-function saveEdit() {
+async function saveEdit() {
   if (editIndex !== -1) {
-    issueList.value[editIndex] = { ...editForm, supportMaterials: issueList.value[editIndex].supportMaterials }
-    editDialogVisible.value = false
+    try {
+      const response = await updateIssue(editForm)
+      if (response.code === 200) {
+        proxy.$modal.msgSuccess('保存成功')
+        issueList.value[editIndex] = { ...editForm, supportMaterials: issueList.value[editIndex].supportMaterials }
+        editDialogVisible.value = false
+      } else {
+        proxy.$modal.msgError(response.msg || '保存失败')
+      }
+    } catch (error) {
+      console.error('保存失败:', error)
+      proxy.$modal.msgError('保存失败')
+    }
   }
 }
 
@@ -236,8 +259,6 @@ async function submitUpload(rowIndex) {
 function customUpload() {
   // 空实现，覆盖默认上传
 }
-
-
 </script>
 
 <style scoped>

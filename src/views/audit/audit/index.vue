@@ -154,19 +154,20 @@
       </div>
       <div style="margin-bottom: 8px; display: flex; gap: 8px;">
         <el-button type="primary" icon="Download" @click="downloadTemplate">下载模板</el-button>
-        <FileUpload
-          :action="'/audit/audit/import'"
-          :fileType="['xls','xlsx']"
-          :limit="1"
-          :fileSize="10"
-          :isShowTip="false"
+        <el-upload
+          ref="importUpload"
+          :action="uploadUrl"
           :data="{ id: currentImportId }"
-          @update:modelValue="handleImportFileChange"
+          :headers="{ Authorization: 'Bearer ' + userStore.token }"
+          :file-list="importFileList"
+          :on-success="handleImportSuccess"
+          :on-error="handleImportError"
+          :before-upload="handleBeforeImport"
+          :limit="1"
+          accept=".xls,.xlsx"
         >
-          <template #trigger>
-            <el-button type="primary" icon="Upload">选取文件</el-button>
-          </template>
-        </FileUpload>
+          <el-button type="primary" icon="Upload">选取文件</el-button>
+        </el-upload>
       </div>
       <div style="margin-bottom: 16px; color: #909399; font-size: 13px;">
         请上传 <b style='color: #f56c6c'>大小不超过 10MB</b> 格式为 <b style='color: #f56c6c'>xls/xlsx</b> 的文件
@@ -183,7 +184,6 @@
 <script setup name="Audit">
 import { listAudit, getAudit, delAudit, addAudit, updateAudit, getDeptList } from "@/api/audit/audit"
 import useUserStore from '@/store/modules/user'
-import FileUpload from '@/components/FileUpload/index.vue'
 
 const { proxy } = getCurrentInstance()
 const userStore = useUserStore()
@@ -202,6 +202,8 @@ const total = ref(0)
 const title = ref("")
 const importDialogOpen = ref(false)
 const currentImportId = ref(null)
+const importFileList = ref([])
+const uploadUrl = import.meta.env.VITE_APP_BASE_API + '/audit/audit/import'
 
 const data = reactive({
   form: {},
@@ -408,10 +410,35 @@ function downloadTemplate() {
   window.open('http://localhost:9000/rulebucket/template/%E5%AF%BC%E5%85%A5%E6%A8%A1%E6%9D%BF.xlsx', '_blank')
 }
 
-function handleImportFileChange(val) {
-  // 上传成功后可在此处理返回内容
-  proxy.$modal.msgSuccess('上传成功')
-  importDialogOpen.value = false
+function handleImportSuccess(response, file, fileList) {
+  // 处理上传成功后的返回内容
+  if (response && response.code === 200) {
+    // 使用 messagebox 进行提示
+    proxy.$modal.msgSuccess(`导入成功！共导入 ${response.data} 条数据`)
+    // 关闭导入对话框
+    importDialogOpen.value = false
+    // 清空文件列表
+    importFileList.value = []
+    // 刷新列表数据
+    getList()
+  } else {
+    // 处理错误情况
+    const errorMsg = response?.msg || '导入失败，请检查文件格式或联系管理员'
+    proxy.$modal.msgError(errorMsg)
+  }
+}
+
+function handleImportError(err, file, fileList) {
+  console.error('导入失败:', err)
+  proxy.$modal.msgError('导入失败，请检查文件格式或联系管理员')
+}
+
+function handleBeforeImport(rawFile) {
+  const isLt10M = rawFile.size / 1024 / 1024 < 10
+  if (!isLt10M) {
+    proxy.$modal.msgError('上传文件大小不能超过 10MB!')
+  }
+  return isLt10M
 }
 
 

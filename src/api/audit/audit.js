@@ -9,6 +9,24 @@ export function listAudit(query) {
   })
 }
 
+// 根据审计ID获取问题列表
+export function getIssueList(mainId) {
+  return request({
+    url: '/audit/audit/issuelist',
+    method: 'get',
+    params: { mainId }
+  })
+}
+
+// 更新问题数据
+export function updateIssue(data) {
+  return request({
+    url: '/audit/audit/issue',
+    method: 'put',
+    data: data
+  })
+}
+
 // 查询审计问题管理详细
 export function getAudit(id) {
   return request({
